@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<amrset name="le-petit-prince" version="1.6" date="2016-03-14" corpus="The Little Prince, a novel by Antoine Saint-Exupery">
+  <sntamr>
+    <sentence id="lpp_1943.1">John went to movie and bought popcorn for his gf.</sentence>
+    <amr date="2012-06-07T17:06:07">
+(r2 / resemble-01
+  :ARG1 (w / water
+          :mod (t / this))
+  :ARG2 (t2 / thing
+          :ARG2-of (n / nourish-01)
+          :mod (o / ordinary))
+  :mod (i / indeed)
+  :polarity -)
+    </amr>
+  </sntamr>
+  <sntamr>
+    <sentence id="lpp_1943.729">" I count them and recount them .</sentence>
+    <amr date="2012-11-12T16:13:26">
+(a / and
+  :op1 (c / count-01
+         :ARG0 (i / i)
+         :ARG1 (t / they))
+  :op2 (r2 / recount-01
+         :ARG0 i
+         :ARG1 t))
+    </amr>
+  </sntamr>
+</amrset>
+ 
