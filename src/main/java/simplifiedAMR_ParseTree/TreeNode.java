@@ -18,6 +18,19 @@ public class TreeNode {
 		this.childNode = new ArrayList<TreeNode>();
 	}
 	
+	public TreeNode(TreeNode node){
+		this.word = node.word;
+		this.alias = node.alias;
+		this.frameNum = node.frameNum;
+		this.childrenCount = node.childrenCount;
+		if(node.childEdge.size()!=0){
+			for(int i=0;i<node.childEdge.size();i++){
+				this.childEdge.add(node.childEdge.get(i));
+				this.childNode.add(node.childNode.get(i));
+			}
+		}
+	}
+	
 	public TreeNode(String word) {
 		super();
 		this.word = word;

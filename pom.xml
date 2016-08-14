@@ -32,5 +32,10 @@
 	    <version>3.6.0</version>
 	    <classifier>models</classifier>
 	</dependency>
+	<dependency>
+		<groupId>org.codehaus.jackson</groupId>
+		<artifactId>jackson-mapper-asl</artifactId>
+		<version>1.9.13</version>
+	</dependency>
   </dependencies>
 </project>

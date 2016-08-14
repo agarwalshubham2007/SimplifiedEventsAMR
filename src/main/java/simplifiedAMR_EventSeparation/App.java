@@ -4,8 +4,11 @@ import simplifiedAMR_ParseTree.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Stack;
 
@@ -14,6 +17,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.xerces.dom.ChildNode;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -33,11 +40,17 @@ public class App
 	public static int rightPos = 1;
 	//HashMap that maintains all verbs in the sentence
     public static HashMap<String, String> verbsMap = new HashMap<String, String>();
+    // arraylist having root node of all events in a sentence
+    public static List<TreeNode> eventRootList = new ArrayList<TreeNode>();
 	
     public static void main( String[] args ) throws ParserConfigurationException, SAXException, IOException, FileNotFoundException
     {
 //    	File inputFile = new File("/Users/Shubham/Documents/workspace/SimplifiedAMR-EventSeparation/src/main/java/simplifiedAMR_EventSeparation/sample.xml");
     	File inputFile = new File("/Users/Shubham/Documents/workspace/SimplifiedAMR-EventSeparation/src/main/java/simplifiedAMR_EventSeparation/amr-bank-v1.6.xml");
+    	
+    	ObjectMapper mapper = new ObjectMapper();
+        JsonNode sentencesJson = mapper.createArrayNode();
+    	
     	
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -70,7 +83,7 @@ public class App
                 makeParseTree(root, amr);
 
                 // printing the parsed tree
-                printParseTree(root);
+//                printParseTree(root);
                 
                 System.out.println("Continue(Y/N)");
 //                int a = System.in.read();
@@ -78,15 +91,117 @@ public class App
                 // storing POS of sentence
                 sentencePOS(sentence);
                 
-                makeSimplifiedEvents(root);
+                makeSimplifiedEvents(root, null, false);
                 
-             }
+                //print simplified events
+                printSimplifiedEvents();
+                
+                //print separated events to file in json
+                File outputFile = new File("/Users/Shubham/Documents/workspace/SimplifiedAMR-EventSeparation/src/main/java/simplifiedAMR_EventSeparation/simplifiedEvents.json");
+                
+               
+                JsonNode sentenceJson = mapper.createObjectNode();
+                ((ObjectNode) sentenceJson).put("sentence", sentence);
+                JsonNode eventsJson = mapper.createArrayNode();
+                
+                for(int i=0;i<eventRootList.size();i++){
+                	((ArrayNode) eventsJson).add(createEventJsonObject(eventRootList.get(i), mapper));
+                }
+                
+                ((ObjectNode) sentenceJson).put("events", eventsJson);
+                ((ArrayNode) sentencesJson).add(sentenceJson);
+                
+                mapper.writeValue(outputFile, sentencesJson);
+                
+                // empty the eventRootList for current sentence
+                eventRootList.clear();
+                
+                
+            }
         }
         
     }
 
-	private static void makeSimplifiedEvents(TreeNode root) {
+	private static JsonNode createEventJsonObject(TreeNode nd, ObjectMapper mapper) {
+		JsonNode eventJson = mapper.createObjectNode();
+		((ObjectNode) eventJson).put("node", nd.word);
+		for(int i=0;i<nd.childEdge.size();i++){
+			if(nd.childNode.get(i).childEdge.size()==0)
+				((ObjectNode) eventJson).put(nd.childEdge.get(i), nd.childNode.get(i).word);
+			else{
+				((ObjectNode) eventJson).put(nd.childEdge.get(i), createEventJsonObject(nd.childNode.get(i), mapper));
+			}
+		}
 		
+		return eventJson;
+	}
+
+	private static void printSimplifiedEvents() {
+		System.out.println("Number of events: " + eventRootList.size());
+	
+		for(int i=0;i<eventRootList.size();i++){
+			System.out.println("*******************************");
+			printParseTree(eventRootList.get(i));
+			System.out.println("*******************************");
+		}
+	}
+
+	private static void makeSimplifiedEvents(TreeNode root, TreeNode eventNode, boolean checkArraylist) {
+		// if current node is event
+		if(isNodeEvent(root)){
+			System.out.println("Yes " + root.word +" is an event" );
+			// make new event root node
+			TreeNode eventRoot = new TreeNode(root.word, root.alias);
+			eventRootList.add(eventRoot);
+			System.out.println(eventRootList.size());
+			// for every child node of current node
+			int ctr=0;
+			for(int i=0;i<root.childEdge.size();i++){
+				// if child node is not event
+				if(!isNodeEvent(root.childNode.get(i))){
+					System.out.println(root.childNode.get(i).word+" is not an event");
+					eventRoot.childEdge.add(root.childEdge.get(i));
+					eventRoot.childNode.add(new TreeNode(root.childNode.get(i).word, root.childNode.get(i).alias));
+					makeSimplifiedEvents(root.childNode.get(i),eventRoot.childNode.get(ctr), true);
+					ctr++;
+				}
+				else{
+					makeSimplifiedEvents(root.childNode.get(i),null, false);
+				}
+			}
+		}
+		// if current node is not event 
+		// ***** ARG-Of not considered yet! *****
+		else{
+			// current node has to be made child of latest event in eventRootList
+			if(checkArraylist){
+				int ctr=0;
+				for(int i=0;i<root.childEdge.size();i++){
+					if(!isNodeEvent(root.childNode.get(i))){
+						eventNode.childEdge.add(root.childEdge.get(i));
+						eventNode.childNode.add(new TreeNode(root.childNode.get(i).word, root.childNode.get(i).alias));
+						makeSimplifiedEvents(root.childNode.get(i),eventNode.childNode.get(ctr), true);
+						ctr++;
+					}
+					else{
+						makeSimplifiedEvents(root.childNode.get(i),null, false);
+					}
+				}
+			}
+			else{
+				for(int i=0;i<root.childEdge.size();i++)
+					makeSimplifiedEvents(root.childNode.get(i), null, false);
+			}
+		}
+	}
+
+	private static boolean isNodeEvent(TreeNode root) {
+		for(int i=0;i<root.childEdge.size();i++){
+			if(root.childEdge.get(i).substring(0, 3).equals("ARG")){
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static void sentencePOS(String sentence) {
