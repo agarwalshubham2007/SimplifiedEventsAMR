@@ -45,8 +45,8 @@ public class App
 	
     public static void main( String[] args ) throws ParserConfigurationException, SAXException, IOException, FileNotFoundException
     {
-//    	File inputFile = new File("/Users/Shubham/Documents/workspace/SimplifiedAMR-EventSeparation/src/main/java/simplifiedAMR_EventSeparation/sample.xml");
-    	File inputFile = new File("/Users/Shubham/Documents/workspace/SimplifiedAMR-EventSeparation/src/main/java/simplifiedAMR_EventSeparation/amr-bank-v1.6.xml");
+    	File inputFile = new File("/Users/Shubham/Documents/workspace/SimplifiedAMR-EventSeparation/src/main/java/simplifiedAMR_EventSeparation/sample.xml");
+//    	File inputFile = new File("/Users/Shubham/Documents/workspace/SimplifiedAMR-EventSeparation/src/main/java/simplifiedAMR_EventSeparation/amr-bank-v1.6.xml");
     	
     	ObjectMapper mapper = new ObjectMapper();
         JsonNode sentencesJson = mapper.createArrayNode();
@@ -59,7 +59,7 @@ public class App
         System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
         NodeList nList = doc.getElementsByTagName("sntamr");
         
-        for (int temp = 0; temp < nList.getLength(); temp++) {
+        for (int temp = 0; temp < nList.getLength() && temp<=10; temp++) {
         	Node nNode = nList.item(temp);
             System.out.println("\nCurrent Element :" + nNode.getNodeName());
             if (nNode.getNodeType() == Node.ELEMENT_NODE) {
@@ -81,9 +81,12 @@ public class App
                 
                 //make parse tree of AMR
                 makeParseTree(root, amr);
+                
+                //resolve ARG-Of in parse tree
+                resolveArgOf(root);
 
                 // printing the parsed tree
-//                printParseTree(root);
+                printParseTree(root);
                 
                 System.out.println("Continue(Y/N)");
 //                int a = System.in.read();
@@ -121,6 +124,58 @@ public class App
         }
         
     }
+
+	private static void resolveArgOf(TreeNode root) {
+		// if this is leaf node RETURN
+		if(root.childEdge.size()==0) return;
+		
+		
+		// check if this node has child ARG-Of
+		for(int i=0;i<root.childEdge.size();i++){
+			if(isEdgeArgOf(root, i)){	
+				System.out.println("HOORAH " + root.childNode.get(i).word + " is ARG-OF node");
+				//clone this node and make it child of ARG-of
+				TreeNode cloneRoot = new TreeNode();
+				cloneNodeForArgOf(root, cloneRoot);
+				root.childNode.get(i).childNode.add(cloneRoot);
+				root.childNode.get(i).childEdge.add(root.childEdge.get(i).substring(0, 4)+" ");
+			}
+			resolveArgOf(root.childNode.get(i));
+		}
+	}
+
+	private static void cloneNodeForArgOf(TreeNode root, TreeNode cloneRoot) {
+		if(root.childEdge.size()>0){
+			cloneRoot.word = root.word;
+			cloneRoot.alias = root.alias;
+			cloneRoot.frameNum = root.frameNum;
+			cloneRoot.childrenCount = root.childrenCount;
+			for(int j=0;j<root.childEdge.size();j++){
+				if(!isEdgeArgOf(root, j)){
+					cloneRoot.childEdge.add(root.childEdge.get(j));
+					cloneRoot.childNode.add(root.childNode.get(j));
+//					cloneNodeForArgOf(root.childNode.get(j), cloneRoot.childNode.get(cloneRoot.childNode.size()-1));
+				}
+			}
+		}
+		else if(root.childEdge.size()==0){
+			cloneRoot.word = root.word;
+			cloneRoot.alias = root.alias;
+			cloneRoot.frameNum = root.frameNum;
+			cloneRoot.childrenCount = root.childrenCount;
+		}
+	}
+
+	private static boolean isEdgeArgOf(TreeNode root, int i) {
+		if(root.childEdge.get(i).substring(0, 3).equals("ARG") && root.childEdge.get(i).substring(root.childEdge.get(i).length()-3, root.childEdge.get(i).length()-1).equals("of")){
+			System.out.println("ARGOF EDGE YES!!");
+			return true;
+		}
+		else { 
+			System.out.println("ARGOF EDGE NO!! -- " + root.childEdge.get(i) + " " + root.childEdge.get(i).length());
+			return false;
+		}
+	}
 
 	private static JsonNode createEventJsonObject(TreeNode nd, ObjectMapper mapper) {
 		JsonNode eventJson = mapper.createObjectNode();
