@@ -1,7 +1,7 @@
 package simplifiedAMR_EventSeparation;
 
-import simplifiedAMR_ParseTree.TreeNode;
 import simplifiedAMR_EventSeparation.App;
+import simplifiedAMR_Tree.TreeNode;
 
 public class ParseTree extends App{
 	public static void resolveArgOf(TreeNode root) {

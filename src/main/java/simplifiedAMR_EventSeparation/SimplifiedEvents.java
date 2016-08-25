@@ -1,6 +1,6 @@
 package simplifiedAMR_EventSeparation;
 
-import simplifiedAMR_ParseTree.TreeNode;
+import simplifiedAMR_Tree.TreeNode;
 
 public class SimplifiedEvents extends App{
 	public static void makeSimplifiedEvents(TreeNode root, TreeNode eventNode, boolean checkArraylist) {

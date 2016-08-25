@@ -1,6 +1,4 @@
 package simplifiedAMR_EventSeparation;
-import simplifiedAMR_ParseTree.*;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,6 +30,7 @@ import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.CoreMap;
+import simplifiedAMR_Tree.*;
 
 public class App 
 {

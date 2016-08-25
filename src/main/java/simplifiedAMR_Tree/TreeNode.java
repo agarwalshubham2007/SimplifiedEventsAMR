@@ -1,4 +1,4 @@
-package simplifiedAMR_ParseTree;
+package simplifiedAMR_Tree;
 
 import java.util.ArrayList;
 
